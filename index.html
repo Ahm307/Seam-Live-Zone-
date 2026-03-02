@@ -20,6 +20,16 @@
             align-items: center; min-height: 100vh;
         }
 
+        /* شاشة الصيانة */
+        #maintenance-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 99999; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: white;
+        }
+        .maintenance-icon { font-size: 6rem; margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
         #admin-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.95); 
@@ -43,9 +53,10 @@
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
 
-        #admin-trigger { position: fixed; bottom: 0; left: 0; width: 50px; height: 50px; background: transparent; cursor: pointer; z-index: 1000; }
+        /* زر المطور المخفي */
+        #admin-trigger { position: fixed; bottom: 0; left: 0; width: 60px; height: 60px; background: transparent; cursor: pointer; z-index: 100000; }
 
-        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 9998; }
         .shiny-text { font-size: 3.5rem; font-weight: bold; color: var(--accent-color); }
 
         #top-timer-bar { display: none; background-color: var(--accent-color); color: #432b05; padding: 8px 30px; border-radius: 50px; font-size: 1.6rem; font-weight: bold; margin-top: 20px; }
@@ -86,13 +97,20 @@
 </head>
 <body>
 
+    <div id="maintenance-screen">
+        <div class="maintenance-icon">⚠️</div>
+        <h1 style="font-size: 3rem;">الموقع تحت الصيانة</h1>
+        <p style="font-size: 1.5rem; color: #94a3b8;">نعتذر، يتم تحديث اللعبة حالياً. سنعود قريباً!</p>
+    </div>
+
     <div id="admin-overlay">
         <div class="flashing-title">🚨الـمـطـور ابو كيلوا🚨</div>
         <div id="alert-text" class="flashing-msg">إخلاء الموقع فوراً</div>
         <button class="win-btn" onclick="closeAlert()">إغلاق</button>
     </div>
 
-    <div id="admin-trigger" onclick="adminAuth()"></div>
+    <div id="admin-trigger" onclick="handleAdmin()"></div>
+
     <div id="intro-screen"><div class="shiny-text">سيم جيم لايف زون</div></div>
     <div id="top-timer-bar">00:00</div>
 
@@ -131,17 +149,45 @@
     <script>
         const rankPoints = {1:3, 2:5, 3:7, 4:9, 5:11, 6:13, 7:15, 8:17, 9:19, 10:21};
         let currentCat = "", currentSide = "", currentPts = 0;
+        let isLocked = localStorage.getItem('siteLocked') === 'true';
 
-        window.adminAuth = function() {
-            let p = prompt("هوية المطور:");
-            if(p === "123") {
-                let m = prompt("اكتب الرسالة:");
-                if(m) {
-                    document.getElementById('alert-text').innerText = m;
-                    document.getElementById('admin-overlay').style.display = "flex";
+        // وظائف المدير والصيانة
+        function handleAdmin() {
+            let action = prompt("1: رسالة تحذير\n2: قفل/فتح الموقع للصيانة\nأدخل الرقم:");
+            
+            if(action === "1") {
+                let p = prompt("هوية المطور:");
+                if(p === "123") {
+                    let m = prompt("اكتب الرسالة:");
+                    if(m) {
+                        document.getElementById('alert-text').innerText = m;
+                        document.getElementById('admin-overlay').style.display = "flex";
+                    }
+                }
+            } else if(action === "2") {
+                let p = prompt("أدخل كلمة مرور القفل (123456):");
+                if(p === "123456") {
+                    toggleMaintenance();
+                } else {
+                    alert("كلمة مرور خاطئة");
                 }
             }
-        };
+        }
+
+        function toggleMaintenance() {
+            isLocked = !isLocked;
+            localStorage.setItem('siteLocked', isLocked);
+            applyMaintenanceState();
+        }
+
+        function applyMaintenanceState() {
+            const mScreen = document.getElementById('maintenance-screen');
+            if(isLocked) {
+                mScreen.style.display = "flex";
+            } else {
+                mScreen.style.display = "none";
+            }
+        }
 
         window.closeAlert = function() { document.getElementById('admin-overlay').style.display = "none"; };
 
@@ -262,7 +308,7 @@
                     200: {q:"من هو اللاعب الملقب بـ (الظاهرة)؟", a:"رونالدو البرازيلي"}, 
                     400: {q:"ما هو العنصر الكيميائي الذي يرمز له بـ (Au)؟", a:"الذهب"}, 
                     600: {q:"ما هي عاصمة اليابان؟", a:"طوكيو"},
-                    800: {q:"كم عدد قلوب الأخطبوط؟", a:"3 قلوب"},
+                    800: {q:"كم عدد قلوب الأخطبوط? ", a:"3 قلوب"},
                     1000: {q:"ما هي أسرع حشرة في العالم؟", a:"اليعسوب"}
                 }
             },
@@ -286,6 +332,7 @@
         };
 
         window.onload = function() {
+            applyMaintenanceState(); // فحص حالة القفل عند الفتح
             setTimeout(() => {
                 document.getElementById('intro-screen').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'flex';
@@ -316,23 +363,19 @@
             Object.keys(bank).forEach(cat => {
                 const isSpec = bank[cat].isSpecial;
                 let rowsLeft = "", rowsRight = "";
-                
                 const pointsKeys = [200, 400, 600, 800, 1000];
-                
                 pointsKeys.forEach(p => { 
                     if(bank[cat].left[p]) {
                         let isUsed = bank[cat].left[p].used ? 'used' : '';
                         rowsLeft += `<div id="box-${cat}-left-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','left',${p}, this)">${p}</div>`; 
                     }
                 });
-                
                 pointsKeys.forEach(p => { 
                     if(bank[cat].right[p]) {
                         let isUsed = bank[cat].right[p].used ? 'used' : '';
                         rowsRight += `<div id="box-${cat}-right-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','right',${p}, this)">${p}</div>`; 
                     }
                 });
-
                 screen.innerHTML += `<div class="cat-card ${isSpec?'special':''}">
                     <div class="cat-main"> <div class="points-col">${rowsLeft}</div> <div style="font-size: 2.5rem;">${bank[cat].icon}</div> <div class="points-col">${rowsRight}</div> </div>
                     <div class="cat-title">${cat}</div> </div>`;
@@ -385,7 +428,6 @@
             let pVal = rankPoints[rank];
             if(team === 1) { score1 += pVal; document.getElementById('score1').innerText = score1; }
             if(team === 2) { score2 += pVal; document.getElementById('score2').innerText = score2; }
-            
             const ansDiv = document.getElementById(`order-ans-${rank}`);
             if(ansDiv) ansDiv.style.display = "block";
             const btnDiv = document.getElementById(`order-btns-${rank}`);
