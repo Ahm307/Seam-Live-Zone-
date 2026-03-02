@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سيم جيم لايف زون</title>
+    <title>سيم جيم لايف زون - النسخة الكاملة</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -20,7 +20,7 @@
             align-items: center; min-height: 100vh;
         }
 
-        /* شاشة الصيانة */
+        /* شاشة الصيانة العالمية */
         #maintenance-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 99999; display: none;
@@ -53,8 +53,7 @@
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
 
-        /* زر المطور المخفي */
-        #admin-trigger { position: fixed; bottom: 0; left: 0; width: 60px; height: 60px; background: transparent; cursor: pointer; z-index: 100000; }
+        #admin-trigger { position: fixed; bottom: 0; left: 0; width: 60px; height: 60px; background: transparent; cursor: pointer; z-index: 100001; }
 
         #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 9998; }
         .shiny-text { font-size: 3.5rem; font-weight: bold; color: var(--accent-color); }
@@ -106,11 +105,10 @@
     <div id="admin-overlay">
         <div class="flashing-title">🚨الـمـطـور ابو كيلوا🚨</div>
         <div id="alert-text" class="flashing-msg">إخلاء الموقع فوراً</div>
-        <button class="win-btn" onclick="closeAlert()">إغلاق</button>
+        <button class="win-btn" onclick="document.getElementById('admin-overlay').style.display='none'">إغلاق مؤقت</button>
     </div>
 
     <div id="admin-trigger" onclick="handleAdmin()"></div>
-
     <div id="intro-screen"><div class="shiny-text">سيم جيم لايف زون</div></div>
     <div id="top-timer-bar">00:00</div>
 
@@ -133,9 +131,7 @@
             <button class="help-btn" onclick="this.classList.add('used')">🕳️ الحفرة</button>
             <button class="help-btn reset-btn" onclick="resetGame()">🔄 ترسيت اللعبة</button>
         </div>
-
         <div class="question-card" id="q-content"></div>
-
         <div class="sidebar">
             <div id="side-name-2" style="color:var(--accent-color); font-weight:bold;"></div>
             <div class="score-display" id="score2" onclick="manualEdit(2)">0</div>
@@ -146,210 +142,89 @@
         </div>
     </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyClRZNm35GpsLiiqXYVUIyt8GOIfa81xlk",
+            authDomain: "live-zone-lock.firebaseapp.com",
+            projectId: "live-zone-lock",
+            storageBucket: "live-zone-lock.firebasestorage.app",
+            messagingSenderId: "836342074080",
+            appId: "1:836342074080:web:995a0e934ab0147c085e85",
+            measurementId: "G-L9TVKCNX42"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        onValue(ref(db, 'siteControl'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('maintenance-screen').style.display = data.isLocked ? "flex" : "none";
+                if (data.alertActive) {
+                    document.getElementById('alert-text').innerText = data.alertMsg;
+                    document.getElementById('admin-overlay').style.display = "flex";
+                } else {
+                    document.getElementById('admin-overlay').style.display = "none";
+                }
+            }
+        });
+
+        window.remoteToggleLock = (state) => set(ref(db, 'siteControl/isLocked'), state);
+        window.remoteToggleAlert = (state, msg = "") => {
+            set(ref(db, 'siteControl/alertActive'), state);
+            if(state) set(ref(db, 'siteControl/alertMsg'), msg);
+        };
+    </script>
+
     <script>
         const rankPoints = {1:3, 2:5, 3:7, 4:9, 5:11, 6:13, 7:15, 8:17, 9:19, 10:21};
+        let score1 = 0, score2 = 0, currentPoints = 0;
         let currentCat = "", currentSide = "", currentPts = 0;
-        let isLocked = localStorage.getItem('siteLocked') === 'true';
-
-        // وظائف المدير والصيانة
-        function handleAdmin() {
-            let action = prompt("1: رسالة تحذير\n2: قفل/فتح الموقع للصيانة\nأدخل الرقم:");
-            
-            if(action === "1") {
-                let p = prompt("هوية المطور:");
-                if(p === "123") {
-                    let m = prompt("اكتب الرسالة:");
-                    if(m) {
-                        document.getElementById('alert-text').innerText = m;
-                        document.getElementById('admin-overlay').style.display = "flex";
-                    }
-                }
-            } else if(action === "2") {
-                let p = prompt("أدخل كلمة مرور القفل (123456):");
-                if(p === "123456") {
-                    toggleMaintenance();
-                } else {
-                    alert("كلمة مرور خاطئة");
-                }
-            }
-        }
-
-        function toggleMaintenance() {
-            isLocked = !isLocked;
-            localStorage.setItem('siteLocked', isLocked);
-            applyMaintenanceState();
-        }
-
-        function applyMaintenanceState() {
-            const mScreen = document.getElementById('maintenance-screen');
-            if(isLocked) {
-                mScreen.style.display = "flex";
-            } else {
-                mScreen.style.display = "none";
-            }
-        }
-
-        window.closeAlert = function() { document.getElementById('admin-overlay').style.display = "none"; };
-
-        function manualEdit(team) {
-            let name = document.getElementById(`side-name-${team}`).innerText;
-            let val = prompt(`تعديل نقاط فريق ${name}:`, team === 1 ? score1 : score2);
-            if(val !== null && !isNaN(val)) {
-                if(team === 1) { score1 = parseInt(val); document.getElementById('score1').innerText = score1; }
-                else { score2 = parseInt(val); document.getElementById('score2').innerText = score2; }
-            }
-        }
-
-        function resetGame() {
-            if(confirm("هل أنت متأكد من تصفير النقاط واللعبة؟")) {
-                location.reload();
-            }
-        }
-
-        let score1 = 0, score2 = 0, currentPoints = 0, lastBox = null;
 
         const bank = {
             "أسئلة دينية": {
                 icon: "🕌",
-                left: { 
-                    200: {q:"ما هي السورة التي تنتهي جميع آياتها بحرف الراء؟", a:"سورة الكوثر"}, 
-                    400: {q:"ما هي الصلاة التي لا ركوع فيها ولا سجود؟", a:"صلاة الجنازة"}, 
-                    600: {q:"من هو الصحابي الذي اهتز لموته عرش الرحمن؟", a:"سعد بن معاذ"},
-                    800: {q:"ما هي أطول آية في القرآن الكريم وفي أي سورة؟", a:"آية الدين في سورة البقرة"},
-                    1000: {q:"من هو أول من جهر بالقرآن الكريم في مكة أمام قريش؟", a:"عبدالله بن مسعود"}
-                },
-                right: { 
-                    200: {q:"ما هي السورة التي تسمى (قلب القرآن)؟", a:"سورة يس"}, 
-                    400: {q:"كم عدد السجدات في القرآن الكريم؟", a:"15 سجدة"}, 
-                    600: {q:"ما هي السورة التي لا تبدأ بالبسملة؟", a:"سورة التوبة"},
-                    800: {q:"ما هي السورة التي ذكرت فيها البسملة مرتين؟", a:"سورة النمل"},
-                    1000: {q:"من هو الصحابي الذي لقب بـ (أمين هذه الأمة)؟", a:"أبو عبيدة عامر بن الجراح"}
-                }
-            },
-            "السيارات": {
-                icon: "🚗",
-                left: { 
-                    200: {q:"ما هي الدولة المصنعة لسيارات لمبورغيني؟", a:"إيطاليا"}, 
-                    400: {q:"ماذا تسمى القطعة التي تبرد محرك السيارة؟", a:"الرديتر (Radiator)"}, 
-                    600: {q:"ما هو اسم نظام الدفع الرباعي في سيارات أودي؟", a:"كواترو (Quattro)"},
-                    800: {q:"ما هو اسم المحرك الذي يتميز بترتيب أسطوانات متقابل أفقياً؟", a:"بوكسر (Boxer Engine)"},
-                    1000: {q:"ما هي أول سيارة في التاريخ تم إنتاجها بكميات تجارية؟", a:"فورد موديل T (Ford Model T)"}
-                },
-                right: { 
-                    200: {q:"ما هي الماركة التي يرمز لها بـ 4 حلقات متصلة؟", a:"أودي (Audi)"}, 
-                    400: {q:"ما هو اسم أول سيارة أطلقتها شركة تيسلا؟", a:"رودستر (Roadster)"}, 
-                    600: {q:"في أي مدينة يقع مقر شركة بي إم دبليو؟", a:"ميونخ، ألمانيا"},
-                    800: {q:"أي شركة سيارات تملك العلامات التجارية (بوجاتي، بنتلي، بورش)؟", a:"مجموعة فولكس فاجن (VW Group)"},
-                    1000: {q:"ماذا يرمز شعار شركة ميتسوبيشي تاريخياً؟", a:"الجواهر الثلاث (أو ورقات الماس الثلاث)"}
-                }
-            },
-            "الجغرافيا": {
-                icon: "🌍",
-                left: { 
-                    200: {q:"ما هي أكبر هضبة في العالم؟", a:"هضبة التبت"}, 
-                    400: {q:"ما هي الدولة التي تمتلك أكبر عدد من الجزر؟", a:"السويد"}, 
-                    600: {q:"أين يقع أعمق خندق مائي في العالم؟", a:"خندق ماريانا في المحيط الهادئ"},
-                    800: {q:"ما هي الدولة التي يمر بها خط الاستواء وخط غرينتش معاً؟", a:"لا توجد دولة (يتقاطعان في المحيط الأطلسي قرب غانا)"},
-                    1000: {q:"ما هي الدولة الوحيدة التي تقع في أربعة أنصاف للكرة الأرضية؟", a:"كيريباتي"}
-                },
-                right: { 
-                    200: {q:"ما هي عاصمة أيسلندا؟", a:"ريكيافيك"}, 
-                    400: {q:"ما هو البحر الذي يفصل بين قارتي أفريقيا وأوروبا؟", a:"البحر الأبيض المتوسط"}, 
-                    600: {q:"ما هو النهر الذي يمر بباريس؟", a:"نهر السين"},
-                    800: {q:"ما هي أعلى قمة جبلية في أفريقيا؟", a:"جبل كيليمانجارو"},
-                    1000: {q:"ما هي الدولة التي تسمى (أرض الألف بحيرة)؟", a:"فنلندا"}
-                }
+                left: { 200: {q:"ما هي السورة التي تنتهي جميع آياتها بحرف الراء؟", a:"سورة الكوثر"}, 400: {q:"ما هي الصلاة التي لا ركوع فيها ولا سجود؟", a:"صلاة الجنازة"}, 600: {q:"من هو الصحابي الذي اهتز لموته عرش الرحمن؟", a:"سعد بن معاذ"}, 800: {q:"أطول آية في القرآن الكريم؟", a:"آية الدين"}, 1000: {q:"أول من جهر بالقرآن في مكة؟", a:"عبدالله بن مسعود"} },
+                right: { 200: {q:"سورة تسمى قلب القرآن؟", a:"يس"}, 400: {q:"عدد السجدات في القرآن؟", a:"15"}, 600: {q:"سورة لا تبدأ بالبسملة؟", a:"التوبة"}, 800: {q:"سورة ذكرت فيها البسملة مرتين؟", a:"النمل"}, 1000: {q:"من هو أمين هذه الأمة؟", a:"أبو عبيدة عامر بن الجراح"} }
             },
             "حكام الدول": {
                 icon: "👑",
-                left: { 
-                    200: {q:"من هو الملك الذي وحد المملكة العربية السعودية؟", a:"الملك عبدالعزيز"}, 
-                    400: {q:"من هو أول رئيس للولايات المتحدة الأمريكية؟", a:"جورج واشنطن"}, 
-                    600: {q:"من كان زعيم ليبيا لأكثر من 40 عاماً؟", a:"معمر القذافي"},
-                    800: {q:"من هو القائد الفرنسي الذي نصب نفسه إمبراطوراً وحكم أجزاء واسعة من أوروبا؟", a:"نابليون بونابرت"},
-                    1000: {q:"من هو الحاكم الذي بنى مدينة سانت بطرسبرغ في روسيا؟", a:"بطرس الأكبر (بيتر الأول)"}
-                },
-                right: { 
-                    200: {q:"من هي الملكة التي حكمت بريطانيا لأطول فترة؟", a:"إليزابيث الثانية"}, 
-                    400: {q:"من هو مؤسس دولة الإمارات؟", a:"الشيخ زايد بن سلطان"}, 
-                    600: {q:"من هو أول رئيس لمصر بعد الملكية؟", a:"محمد نجيب"},
-                    800: {q:"من هو المستشار الألماني الذي قاد توحيد ألمانيا عام 1990؟", a:"هلموت كول"},
-                    1000: {q:"من هو الإمبراطور الذي حكم اليابان خلال الحرب العالمية الثانية؟", a:"هيروهيتو"}
-                }
+                left: { 200: {q:"من هو ملك المملكة العربية السعودية الحالي؟", a:"الملك سلمان بن عبدالعزيز"}, 400: {q:"من هو حاكم دولة الإمارات العربية المتحدة الحالي؟", a:"الشيخ محمد بن زايد"}, 600: {q:"من هو سلطان عمان الحالي؟", a:"السلطان هيثم بن طارق"}, 800: {q:"من هو ملك المغرب الحالي؟", a:"الملك محمد السادس"}, 1000: {q:"من هو رئيس جمهورية مصر العربية الحالي؟", a:"عبد الفتاح السيسي"} },
+                right: { 200: {q:"من هو أمير دولة قطر الحالي؟", a:"الشيخ تميم بن حمد"}, 400: {q:"من هو ملك الأردن الحالي؟", a:"الملك عبدالله الثاني"}, 600: {q:"من هو أمير دولة الكويت الحالي؟", a:"الشيخ مشعل الأحمد الصباح"}, 800: {q:"من هو ملك البحرين الحالي؟", a:"الملك حمد بن عيسى"}, 1000: {q:"من هو رئيس العراق الحالي؟", a:"عبد اللطيف رشيد"} }
+            },
+            "السيارات": {
+                icon: "🚗",
+                left: { 200: {q:"بلد صنع لمبورغيني؟", a:"إيطاليا"}, 400: {q:"قطعة تبريد المحرك؟", a:"الرديتر"}, 600: {q:"نظام دفع أودي؟", a:"كواترو"}, 800: {q:"محرك أسطوانات متقابلة؟", a:"بوكسر"}, 1000: {q:"أول سيارة إنتاج تجاري؟", a:"فورد موديل T"} },
+                right: { 200: {q:"ماركة بـ 4 حلقات؟", a:"أودي"}, 400: {q:"أول سيارة تيسلا؟", a:"رودستر"}, 600: {q:"مقر بي إم دبليو؟", a:"ميونخ"}, 800: {q:"شركة تملك بوجاتي وبورش؟", a:"فولكس فاجن"}, 1000: {q:"يرمز شعار ميتسوبيشي لـ؟", a:"الجواهر الثلاث"} }
             },
             "الترتيب": {
-                icon: "🔢",
-                isSpecial: true,
-                left: { 
-                    200: {q:"رتب أكثر 10 ألعاب شهرة في العالم (من حيث اللاعبين النشطين)", a:"1. ببجي 2. ماين كرافت 3. روبلوكس 4. كاندي كراش 5. فورتنايت 6. لول 7. كود 8. امونج اس 9. فيفا 10. سيمز"}, 
-                    400: {q:"رتب أكثر 10 تطبيقات استخداماً في العالم", a:"1. فيسبوك 2. واتساب 3. انستقرام 4. ماسنجر 5. تيك توك 6. تلغرام 7. سناب شات 8. تويتر (X) 9. بنترست 10. كواي"}, 
-                    600: {q:"رتب أكثر 10 دول سياحية تم زيارتها (2024)", a:"1. فرنسا 2. إسبانيا 3. أمريكا 4. إيطاليا 5. تركيا 6. المكسيك 7. بريطانيا 8. ألمانيا 9. اليونان 10. النمسا"},
-                    800: {q:"رتب أكثر 10 لاعبين كرة قدم شهرة (تأثير وسوشيال ميديا)", a:"1. كريستيانو رونالدو 2. ميسي 3. نيمار 4. مبابي 5. صلاح 6. بنزيما 7. هالاند 8. ليفاندوفسكي 9. فينيسيوس 10. هاري كين"},
-                    1000: {q:"رتب أكثر 10 أندية تحقيقاً لدوري أبطال أوروبا", a:"1. ريال مدريد (15) 2. ميلان (7) 3. ليفربول (6) 4. بايرن ميونخ (6) 5. برشلونة (5) 6. أياكس (4) 7. مانشستر يونايتد (3) 8. انتر ميلان (3) 9. يوفنتوس (2) 10. بنفيكا (2)"}
-                },
-                right: { 
-                    200: {q:"رتب أكثر 10 شركات سيارات مبيعاً في العالم", a:"1. تويوتا 2. فولكس فاجن 3. فورد 4. هيونداي 5. هوندا 6. nissan 7. جنرال موتورز 8. كيا 9. بي إم دبليو 10. مرسيدس"}, 
-                    400: {q:"رتب أغنى 10 أشخاص في العالم (حسب فوربس)", a:"1. إيلون ماسك 2. جيف بيزوس 3. برنارد أرنو 4. مارك زوكربيرج 5. لاري إليسون 6. وارن بافيت 7. بيل غيتس 8. لاري بيج 9. ستيف بالمر 10. سيرجي برين"}, 
-                    600: {q:"رتب أكثر 10 دول منتشر فيها الإسلام (عدداً)", a:"1. إندونيسيا 2. باكستان 3. الهند 4. بنجلاديش 5. نيجيريا 6. مصر 7. تركيا 8. إيران 9. الجزائر 10. السودان"},
-                    800: {q:"رتب أقوى 10 جيوش في العالم (2024)", a:"1. أمريكا 2. روسيا 3. الصين 4. الهند 5. كوريا الجنوبية 6. بريطانيا 7. اليابان 8. تركيا 9. باكستان 10. إيطاليا"},
-                    1000: {q:"رتب أعلى 10 قنوات يوتيوب من حيث المشتركين", a:"1. MrBeast 2. T-Series 3. Cocomelon 4. SET India 5. Kids Diana Show 6. Vlad and Niki 7. Like Nastya 8. PewDiePie 9. Zee Music 10. WWE"}
-                }
+                icon: "🔢", isSpecial: true,
+                left: { 200: {q:"رتب أكثر 10 ألعاب شهرة", a:"1. ببجي 2. ماين كرافت 3. روبلوكس 4. كاندي كراش 5. فورتنايت 6. لول 7. كود 8. امونج اس 9. فيفا 10. سيمز"}, 400: {q:"رتب أكثر 10 تطبيقات استخداماً", a:"1. فيسبوك 2. واتساب 3. انستقرام 4. ماسنجر 5. تيك توك 6. تلغرام 7. سناب شات 8. تويتر 9. بنترست 10. كواي"}, 600: {q:"رتب أكثر 10 دول سياحية", a:"1. فرنسا 2. إسبانيا 3. أمريكا 4. إيطاليا 5. تركيا 6. المكسيك 7. بريطانيا 8. ألمانيا 9. اليونان 10. النمسا"}, 800: {q:"رتب أكثر 10 لاعبين شهرة", a:"1. رونالدو 2. ميسي 3. نيمار 4. مبابي 5. صلاح 6. بنزيما 7. هالاند 8. ليفاندوفسكي 9. فينيسيوس 10. هاري كين"}, 1000: {q:"رتب أندية تحقيقاً للأبطال", a:"1. ريال مدريد 2. ميلان 3. ليفربول 4. بايرن 5. برشلونة 6. أياكس 7. مانشستر 8. انتر 9. يوفنتوس 10. بنفيكا"} },
+                right: { 200: {q:"رتب شركات سيارات مبيعاً", a:"1. تويوتا 2. فولكس فاجن 3. فورد 4. هيونداي 5. هوندا 6. نيسان 7. جنرال موتورز 8. كيا 9. بي إم دبليو 10. مرسيدس"}, 400: {q:"رتب أغنى 10 أشخاص", a:"1. إيلون ماسك 2. جيف بيزوس 3. برنارد أرنو 4. مارك زوكربيرج 5. لاري إليسون 6. وارن بافيت 7. بيل غيتس 8. لاري بيج 9. ستيف بالمر 10. سيرجي برين"}, 600: {q:"رتب دول سكاناً مسلمين", a:"1. إندونيسيا 2. باكستان 3. الهند 4. بنجلاديش 5. نيجيريا 6. مصر 7. تركيا 8. إيران 9. الجزائر 10. السودان"}, 800: {q:"رتب أقوى 10 جيوش", a:"1. أمريكا 2. روسيا 3. الصين 4. الهند 5. كوريا الجنوبية 6. بريطانيا 7. اليابان 8. تركيا 9. باكستان 10. إيطاليا"}, 1000: {q:"رتب قنوات يوتيوب مشتركين", a:"1. MrBeast 2. T-Series 3. Cocomelon 4. SET India 5. Kids Diana Show 6. Vlad and Niki 7. Like Nastya 8. PewDiePie 9. Zee Music 10. WWE"} }
             },
             "لايف زون": {
                 icon: "🏙️",
-                left: { 
-                    200: {q:"شيء تذبحه وتبكي عليه؟", a:"البصل"}, 
-                    400: {q:"ما هو الشيء الذي له أرجل ولكنه لا يمشي؟", a:"الكرسي"}, 
-                    600: {q:"ما هو الشيء الذي يحيا في الصيف ويموت في الشتاء؟", a:"المكيف"},
-                    800: {q:"ما هو الشيء الذي يمتلك عيناً واحدة ولكنه لا يرى؟", a:"الإبرة"},
-                    1000: {q:"ما هو الشيء الذي يمشي بلا قدمين ويدخل الأذنين؟", a:"الصوت"}
-                },
-                right: { 
-                    200: {q:"من هو اللاعب الملقب بـ (الظاهرة)؟", a:"رونالدو البرازيلي"}, 
-                    400: {q:"ما هو العنصر الكيميائي الذي يرمز له بـ (Au)؟", a:"الذهب"}, 
-                    600: {q:"ما هي عاصمة اليابان؟", a:"طوكيو"},
-                    800: {q:"كم عدد قلوب الأخطبوط? ", a:"3 قلوب"},
-                    1000: {q:"ما هي أسرع حشرة في العالم؟", a:"اليعسوب"}
-                }
-            },
-            "ألغاز": {
-                icon: "🧩",
-                left: { 
-                    200: {q:"له أوراق لكنه ليس شجرة وله جلد لكنه ليس حيوان ويتكلم بلا صوت؟", a:"الكتاب"}, 
-                    400: {q:"إذا كان عندك منه واحد فأنت لا تملكه وإذا شاركته ملكته؟", a:"السر"}, 
-                    600: {q:"شيء يوجد في الدقيقة مرتين وفي القرن مرة ولا يوجد في الساعة ما هو؟", a:"حرف القاف"},
-                    800: {q:"ما هو الشيء الذي كلما زاد نقص؟", a:"العمر"},
-                    1000: {q:"رجل خرج في المطر دون مظلة ولم يبتل شعره، كيف ذلك؟", a:"لأنه أصلع"}
-                },
-                right: { 
-                    200: {q:"ما هو الشيء الذي إذا ذكرته اختفى؟", a:"الصمت"}, 
-                    400: {q:"أمك لديها أربعة أبناء شمال، جنوب، شرق ما اسم الرابع؟", a:"اسمك انت 🙂"}, 
-                    600: {q:"فيروس لا يعتبر كائن حي كامل لأنه لا يستطيع التكاثر وحده ما هو؟", a:"الفيروس"},
-                    800: {q:"ما هو الشيء الذي تراه ثلاث مرات في الليل ومرة واحدة في النهار؟", a:"حرف اللام"},
-                    1000: {q:"أنا موجود في الشتاء، وموجود في الصيف، ولكنني لست في الربيع أو الخريف.. من أنا؟", a:"حرف الياء"}
-                }
+                left: { 200: {q:"تذبحه وتبكي عليه؟", a:"البصل"}, 400: {q:"له أرجل ولا يمشي؟", a:"الكرسي"}, 600: {q:"يحيا صيفاً ويموت شتاءً؟", a:"المكيف"}, 800: {q:"عين واحدة ولا يرى؟", a:"الإبرة"}, 1000: {q:"يمشي بلا قدمين للأذن؟", a:"الصوت"} },
+                right: { 200: {q:"اللاعب الظاهرة؟", a:"رونالدو البرازيلي"}, 400: {q:"عنصر Au؟", a:"الذهب"}, 600: {q:"عاصمة اليابان؟", a:"طوكيو"}, 800: {q:"عدد قلوب الأخطبوط؟", a:"3"}, 1000: {q:"أسرع حشرة؟", a:"اليعسوب"} }
             }
         };
 
-        window.onload = function() {
-            applyMaintenanceState(); // فحص حالة القفل عند الفتح
-            setTimeout(() => {
-                document.getElementById('intro-screen').style.display = 'none';
-                document.getElementById('setup-screen').style.display = 'flex';
-            }, 2000);
-        };
+        function handleAdmin() {
+            let p = prompt("هوية المطور:");
+            if(p !== "123456") return alert("خطأ");
+            let action = prompt("1: صيانة\n2: طرد\n3: إيقاف");
+            if(action=="1") window.remoteToggleLock(confirm("قفل؟"));
+            else if(action=="2") window.remoteToggleAlert(true, prompt("الرسالة:"));
+            else if(action=="3") window.remoteToggleAlert(false);
+        }
 
         function showCategories() {
-            const team1 = document.getElementById('t1').value;
-            const team2 = document.getElementById('t2').value;
-            
-            if(!team1 || !team2) {
-                alert("يرجى إدخال أسماء الفرق أولاً");
-                return;
-            }
-
-            document.getElementById('side-name-1').innerText = team1;
-            document.getElementById('side-name-2').innerText = team2;
+            if(!document.getElementById('t1').value || !document.getElementById('t2').value) return alert("ادخل الأسماء");
+            document.getElementById('side-name-1').innerText = document.getElementById('t1').value;
+            document.getElementById('side-name-2').innerText = document.getElementById('t2').value;
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('top-timer-bar').style.display = 'block';
             startTimer();
@@ -358,113 +233,79 @@
 
         function renderCategories() {
             const screen = document.getElementById('categories-screen');
-            screen.style.display = 'grid'; 
-            screen.innerHTML = "";
+            screen.style.display = 'grid'; screen.innerHTML = "";
             Object.keys(bank).forEach(cat => {
-                const isSpec = bank[cat].isSpecial;
                 let rowsLeft = "", rowsRight = "";
-                const pointsKeys = [200, 400, 600, 800, 1000];
-                pointsKeys.forEach(p => { 
-                    if(bank[cat].left[p]) {
-                        let isUsed = bank[cat].left[p].used ? 'used' : '';
-                        rowsLeft += `<div id="box-${cat}-left-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','left',${p}, this)">${p}</div>`; 
-                    }
+                [200, 400, 600, 800, 1000].forEach(p => {
+                    if(bank[cat].left[p]) rowsLeft += `<div class="point-box ${bank[cat].left[p].used?'used':''} ${bank[cat].isSpecial?'order-pts':''}" onclick="loadQ('${cat}','left',${p})">${p}</div>`;
+                    if(bank[cat].right[p]) rowsRight += `<div class="point-box ${bank[cat].right[p].used?'used':''} ${bank[cat].isSpecial?'order-pts':''}" onclick="loadQ('${cat}','right',${p})">${p}</div>`;
                 });
-                pointsKeys.forEach(p => { 
-                    if(bank[cat].right[p]) {
-                        let isUsed = bank[cat].right[p].used ? 'used' : '';
-                        rowsRight += `<div id="box-${cat}-right-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','right',${p}, this)">${p}</div>`; 
-                    }
-                });
-                screen.innerHTML += `<div class="cat-card ${isSpec?'special':''}">
-                    <div class="cat-main"> <div class="points-col">${rowsLeft}</div> <div style="font-size: 2.5rem;">${bank[cat].icon}</div> <div class="points-col">${rowsRight}</div> </div>
-                    <div class="cat-title">${cat}</div> </div>`;
+                screen.innerHTML += `<div class="cat-card ${bank[cat].isSpecial?'special':''}">
+                    <div class="cat-main"><div class="points-col">${rowsLeft}</div><div style="font-size:2.5rem">${bank[cat].icon}</div><div class="points-col">${rowsRight}</div></div>
+                    <div class="cat-title">${cat}</div></div>`;
             });
         }
 
-        function loadQ(cat, side, pts, el) {
+        function loadQ(cat, side, pts) {
             if(bank[cat][side][pts].used) return;
-            currentCat = cat; currentSide = side; currentPts = pts;
-            currentPoints = pts; lastBox = el;
+            currentCat = cat; currentSide = side; currentPts = pts; currentPoints = pts;
             const data = bank[cat][side][pts];
-            const isOrder = bank[cat].isSpecial;
-
             document.getElementById('categories-screen').style.display = 'none';
             document.getElementById('game-interface').style.display = 'flex';
-
-            let html = `<h2 style="color:${isOrder ? '#0ea5e9' : 'var(--accent-color)'}">${cat} (${pts})</h2>
-                        <p style="font-size:1.8rem; margin:20px 0; line-height:1.4;">${data.q}</p>`;
-
-            if (isOrder) {
-                const answers = data.a.split(/\d+\./).filter(a => a.trim() !== "");
+            let html = `<h2>${cat} (${pts})</h2><p style="font-size:1.8rem">${data.q}</p>`;
+            if(bank[cat].isSpecial) {
+                const ansList = data.a.split(/\d+\./).filter(x => x.trim()!="");
                 html += `<div class="order-grid">`;
-                answers.forEach((ans, i) => {
-                    let rank = i + 1;
-                    let pVal = rankPoints[rank];
-                    html += `
-                    <div class="order-item">
-                        <span class="order-rank-label">المركز ${rank} (${pVal}ن)</span>
-                        <div class="order-ans-text" id="order-ans-${rank}">${ans.trim()}</div>
-                        <div id="order-btns-${rank}" style="width:100%; display:flex; gap:5px;">
-                            <button class="order-give-btn" style="background:#f59e0b" onclick="giveOrderPts(${rank}, 1)">${document.getElementById('t1').value}</button>
-                            <button class="order-give-btn" style="background:#0ea5e9" onclick="giveOrderPts(${rank}, 2)">${document.getElementById('t2').value}</button>
-                            <button class="order-give-btn" style="background:#64748b" onclick="giveOrderPts(${rank}, 0)">كشف</button>
-                        </div>
+                ansList.forEach((a, i) => {
+                    let r = i+1;
+                    html += `<div class="order-item">
+                        <span class="order-rank-label">مركز ${r} (${rankPoints[r]}ن)</span>
+                        <div class="order-ans-text" id="oa-${r}">${a}</div>
+                        <div id="ob-${r}"><button class="order-give-btn" style="background:#f59e0b" onclick="givePts(${r},1)">${document.getElementById('t1').value}</button>
+                        <button class="order-give-btn" style="background:#0ea5e9" onclick="givePts(${r},2)">${document.getElementById('t2').value}</button></div>
                     </div>`;
                 });
-                html += `</div><button class="win-btn" onclick="nextRound()">الجولة التالية</button>`;
+                html += `</div><button class="win-btn" onclick="finishQ()">انهاء الجولة</button>`;
             } else {
-                html += `<div id="ans" style="display:none; text-align:center; color:#4ade80; font-weight:bold; font-size:1.8rem; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; margin-bottom:20px;">${data.a}</div>
-                         <button class="win-btn" id="rev-btn" onclick="document.getElementById('ans').style.display='block'; this.style.display='none'; document.getElementById('win-area').style.display='block';">إظهار الإجابة</button>
-                         <div id="win-area" style="display:none; margin-top:20px;">
-                         <button class="win-btn" onclick="addPts(1)">${document.getElementById('t1').value}</button>
-                         <button class="win-btn" onclick="addPts(2)">${document.getElementById('t2').value}</button>
-                         <button class="win-btn no-one-btn" onclick="addPts(0)">لا أحد</button></div>`;
+                html += `<div id="ans" style="display:none; color:#4ade80; font-size:1.8rem; margin:20px">${data.a}</div>
+                    <button class="win-btn" onclick="document.getElementById('ans').style.display='block'">كشف الإجابة</button><hr>
+                    <button class="win-btn" onclick="addPts(1)">فوز الفريق 1</button>
+                    <button class="win-btn" onclick="addPts(2)">فوز الفريق 2</button>
+                    <button class="win-btn no-one-btn" onclick="addPts(0)">تخطي</button>`;
             }
             document.getElementById('q-content').innerHTML = html;
         }
 
-        function giveOrderPts(rank, team) {
-            let pVal = rankPoints[rank];
-            if(team === 1) { score1 += pVal; document.getElementById('score1').innerText = score1; }
-            if(team === 2) { score2 += pVal; document.getElementById('score2').innerText = score2; }
-            const ansDiv = document.getElementById(`order-ans-${rank}`);
-            if(ansDiv) ansDiv.style.display = "block";
-            const btnDiv = document.getElementById(`order-btns-${rank}`);
-            if(btnDiv) btnDiv.style.display = "none";
+        function givePts(r, t) {
+            if(t==1) { score1 += rankPoints[r]; document.getElementById('score1').innerText=score1; }
+            if(t==2) { score2 += rankPoints[r]; document.getElementById('score2').innerText=score2; }
+            document.getElementById(`oa-${r}`).style.display="block";
+            document.getElementById(`ob-${r}`).style.display="none";
         }
 
-        function nextRound() {
-            bank[currentCat][currentSide][currentPts].used = true;
-            const allPts = Object.keys(bank[currentCat][currentSide]).map(Number).sort((a,b)=>a-b);
-            const currentIndex = allPts.indexOf(currentPts);
-            if (currentIndex !== -1 && currentIndex < allPts.length - 1) {
-                const nextPts = allPts[currentIndex + 1];
-                loadQ(currentCat, currentSide, nextPts, null);
-            } else {
-                finishQuestion();
-            }
+        function addPts(t) {
+            if(t==1) { score1 += currentPoints; document.getElementById('score1').innerText=score1; }
+            if(t==2) { score2 += currentPoints; document.getElementById('score2').innerText=score2; }
+            finishQ();
         }
 
-        function finishQuestion() {
+        function finishQ() {
             bank[currentCat][currentSide][currentPts].used = true;
             document.getElementById('game-interface').style.display = 'none';
             renderCategories();
         }
 
-        function addPts(team) {
-            if(team === 1) { score1 += currentPoints; document.getElementById('score1').innerText = score1; }
-            else if(team === 2) { score2 += currentPoints; document.getElementById('score2').innerText = score2; }
-            finishQuestion();
+        function manualEdit(t) {
+            let v = prompt("النقاط:");
+            if(v!=null) {
+                if(t==1) { score1=parseInt(v); document.getElementById('score1').innerText=score1; }
+                else { score2=parseInt(v); document.getElementById('score2').innerText=score2; }
+            }
         }
 
-        function startTimer() {
-            let s = 0;
-            setInterval(() => {
-                s++; let m = Math.floor(s/60), sec = s%60;
-                document.getElementById('top-timer-bar').innerText = `${m<10?'0'+m:m}:${sec<10?'0'+sec:sec}`;
-            }, 1000);
-        }
+        function resetGame() { if(confirm("تصفير؟")) location.reload(); }
+        function startTimer() { let s = 0; setInterval(() => { s++; let m=Math.floor(s/60), sc=s%60; document.getElementById('top-timer-bar').innerText = `${m<10?'0'+m:m}:${sc<10?'0'+sc:sc}`; }, 1000); }
+        window.onload = () => { setTimeout(()=>document.getElementById('intro-screen').style.display='none', 2000); document.getElementById('setup-screen').style.display='flex'; };
     </script>
 </body>
 </html>
