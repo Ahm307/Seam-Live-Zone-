@@ -20,6 +20,14 @@
             align-items: center; min-height: 100vh;
         }
 
+        /* شاشة الصيانة الإجبارية */
+        #maintenance-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 99999; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: white;
+        }
+
         #admin-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.95); 
@@ -45,7 +53,7 @@
 
         #admin-trigger { position: fixed; bottom: 0; left: 0; width: 50px; height: 50px; background: transparent; cursor: pointer; z-index: 1000; }
 
-        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 9998; }
         .shiny-text { font-size: 3.5rem; font-weight: bold; color: var(--accent-color); }
 
         #top-timer-bar { display: none; background-color: var(--accent-color); color: #432b05; padding: 8px 30px; border-radius: 50px; font-size: 1.6rem; font-weight: bold; margin-top: 20px; }
@@ -85,6 +93,8 @@
     </style>
 </head>
 <body>
+
+    <div id="maintenance-screen"><h1 style="font-size: 3rem;">الموقع تحت الصيانة ⚠️</h1></div>
 
     <div id="admin-overlay">
         <div class="flashing-title">🚨الـمـطـور ابو كيلوا🚨</div>
@@ -128,17 +138,73 @@
         </div>
     </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyClRZNm35GpsLiiqXYVUIyt8GOIfa81xlk",
+            authDomain: "live-zone-lock.firebaseapp.com",
+            projectId: "live-zone-lock",
+            databaseURL: "https://live-zone-lock-default-rtdb.firebaseio.com",
+            appId: "1:836342074080:web:995a0e934ab0147c085e85"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // متغير لمتابعة حالة القفل محلياً
+        window.isCurrentlyLocked = false;
+
+        // الاستماع للتغييرات في Firebase
+        onValue(ref(db, 'siteControl'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // حالة القفل (الصيانة)
+                window.isCurrentlyLocked = !!data.isLocked;
+                document.getElementById('maintenance-screen').style.display = data.isLocked ? "flex" : "none";
+                
+                // حالة الطرد
+                if (data.kickAll) { 
+                    set(ref(db, 'siteControl/kickAll'), false); 
+                    window.location.href = "about:blank"; 
+                }
+
+                // حالة التنبيه
+                if (data.alertActive) {
+                    document.getElementById('alert-text').innerText = data.alertMsg;
+                    document.getElementById('admin-overlay').style.display = "flex";
+                } else {
+                    document.getElementById('admin-overlay').style.display = "none";
+                }
+            }
+        });
+
+        // وظيفة لإرسال البيانات لـ Firebase
+        window.dbSet = (path, val) => set(ref(db, 'siteControl/' + path), val);
+    </script>
+
     <script>
         const rankPoints = {1:3, 2:5, 3:7, 4:9, 5:11, 6:13, 7:15, 8:17, 9:19, 10:21};
         let currentCat = "", currentSide = "", currentPts = 0;
 
+        // تعديل وظيفة الإدارة لتدعم Firebase
         window.adminAuth = function() {
             let p = prompt("هوية المطور:");
             if(p === "123") {
-                let m = prompt("اكتب الرسالة:");
-                if(m) {
-                    document.getElementById('alert-text').innerText = m;
-                    document.getElementById('admin-overlay').style.display = "flex";
+                let action = prompt("1: صيانة (فتح/إغلاق) | 2: طرد الجميع | 3: إرسال تنبيه");
+                
+                if(action === "1") {
+                    let newState = !window.isCurrentlyLocked;
+                    if(confirm(newState ? "تفعيل وضع الصيانة؟" : "إلغاء وضع الصيانة؟")) {
+                        window.dbSet('isLocked', newState);
+                    }
+                } else if(action === "2") {
+                    if(confirm("طرد جميع المستخدمين؟")) window.dbSet('kickAll', true);
+                } else if(action === "3") {
+                    let m = prompt("اكتب الرسالة (اترك فارغاً للإلغاء):");
+                    window.dbSet('alertActive', !!m);
+                    window.dbSet('alertMsg', m || "");
                 }
             }
         };
@@ -251,20 +317,8 @@
             },
             "لايف زون": {
                 icon: "🏙️",
-                left: { 
-                    200: {q:"صيانة", a:"صيانة"}, 
-                    400: {q:"صيانة", a:"صيانة"}, 
-                    600: {q:"صيانة", a:"صيانة"},
-                    800: {q:"صيانة", a:"صيانة"},
-                    1000: {q:"صيانة", a:"صيانة"}
-                },
-                right: { 
-                    200: {q:"صيانة", a:"صيانة"}, 
-                    400: {q:"صيانة", a:"صيانة"}, 
-                    600: {q:"صيانة", a:"صيانة"},
-                    800: {q:"صيانة", a:"صيانة"},
-                    1000: {q:"صيانة", a:"صيانة"},
-                }
+                left: { 200: {q:"صيانة", a:"صيانة"}, 400: {q:"صيانة", a:"صيانة"}, 600: {q:"صيانة", a:"صيانة"}, 800: {q:"صيانة", a:"صيانة"}, 1000: {q:"صيانة", a:"صيانة"}},
+                right: { 200: {q:"صيانة", a:"صيانة"}, 400: {q:"صيانة", a:"صيانة"}, 600: {q:"صيانة", a:"صيانة"}, 800: {q:"صيانة", a:"صيانة"}, 1000: {q:"صيانة", a:"صيانة"}}
             },
             "ألغاز": {
                 icon: "🧩",
@@ -295,12 +349,7 @@
         function showCategories() {
             const team1 = document.getElementById('t1').value;
             const team2 = document.getElementById('t2').value;
-            
-            if(!team1 || !team2) {
-                alert("يرجى إدخال أسماء الفرق أولاً");
-                return;
-            }
-
+            if(!team1 || !team2) { alert("يرجى إدخال أسماء الفرق أولاً"); return; }
             document.getElementById('side-name-1').innerText = team1;
             document.getElementById('side-name-2').innerText = team2;
             document.getElementById('setup-screen').style.display = 'none';
@@ -316,23 +365,19 @@
             Object.keys(bank).forEach(cat => {
                 const isSpec = bank[cat].isSpecial;
                 let rowsLeft = "", rowsRight = "";
-                
                 const pointsKeys = [200, 400, 600, 800, 1000];
-                
                 pointsKeys.forEach(p => { 
                     if(bank[cat].left[p]) {
                         let isUsed = bank[cat].left[p].used ? 'used' : '';
-                        rowsLeft += `<div id="box-${cat}-left-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','left',${p}, this)">${p}</div>`; 
+                        rowsLeft += `<div class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','left',${p}, this)">${p}</div>`; 
                     }
                 });
-                
                 pointsKeys.forEach(p => { 
                     if(bank[cat].right[p]) {
                         let isUsed = bank[cat].right[p].used ? 'used' : '';
-                        rowsRight += `<div id="box-${cat}-right-${p}" class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','right',${p}, this)">${p}</div>`; 
+                        rowsRight += `<div class="point-box ${isSpec?'order-pts':''} ${isUsed}" onclick="loadQ('${cat}','right',${p}, this)">${p}</div>`; 
                     }
                 });
-
                 screen.innerHTML += `<div class="cat-card ${isSpec?'special':''}">
                     <div class="cat-main"> <div class="points-col">${rowsLeft}</div> <div style="font-size: 2.5rem;">${bank[cat].icon}</div> <div class="points-col">${rowsRight}</div> </div>
                     <div class="cat-title">${cat}</div> </div>`;
@@ -345,21 +390,17 @@
             currentPoints = pts; lastBox = el;
             const data = bank[cat][side][pts];
             const isOrder = bank[cat].isSpecial;
-
             document.getElementById('categories-screen').style.display = 'none';
             document.getElementById('game-interface').style.display = 'flex';
-
             let html = `<h2 style="color:${isOrder ? '#0ea5e9' : 'var(--accent-color)'}">${cat} (${pts})</h2>
                         <p style="font-size:1.8rem; margin:20px 0; line-height:1.4;">${data.q}</p>`;
-
             if (isOrder) {
                 const answers = data.a.split(/\d+\./).filter(a => a.trim() !== "");
                 html += `<div class="order-grid">`;
                 answers.forEach((ans, i) => {
                     let rank = i + 1;
                     let pVal = rankPoints[rank];
-                    html += `
-                    <div class="order-item">
+                    html += `<div class="order-item">
                         <span class="order-rank-label">المركز ${rank} (${pVal}ن)</span>
                         <div class="order-ans-text" id="order-ans-${rank}">${ans.trim()}</div>
                         <div id="order-btns-${rank}" style="width:100%; display:flex; gap:5px;">
@@ -385,7 +426,6 @@
             let pVal = rankPoints[rank];
             if(team === 1) { score1 += pVal; document.getElementById('score1').innerText = score1; }
             if(team === 2) { score2 += pVal; document.getElementById('score2').innerText = score2; }
-            
             const ansDiv = document.getElementById(`order-ans-${rank}`);
             if(ansDiv) ansDiv.style.display = "block";
             const btnDiv = document.getElementById(`order-btns-${rank}`);
@@ -399,9 +439,7 @@
             if (currentIndex !== -1 && currentIndex < allPts.length - 1) {
                 const nextPts = allPts[currentIndex + 1];
                 loadQ(currentCat, currentSide, nextPts, null);
-            } else {
-                finishQuestion();
-            }
+            } else { finishQuestion(); }
         }
 
         function finishQuestion() {
@@ -426,3 +464,4 @@
     </script>
 </body>
 </html>
+ 
