@@ -108,9 +108,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // متغير لمراقبة حالة الصيانة الحالية
+        window.isCurrentlyLocked = false;
+
         onValue(ref(db, 'siteControl'), (snapshot) => {
             const data = snapshot.val();
             if (data) {
+                window.isCurrentlyLocked = !!data.isLocked;
                 document.getElementById('maintenance-screen').style.display = data.isLocked ? "flex" : "none";
                 if (data.kickAll) { set(ref(db, 'siteControl/kickAll'), false); window.location.href = "about:blank"; }
                 if (data.alertActive) {
@@ -160,7 +164,7 @@
             },
             "ألغاز": {
                 icon: "🧩",
-                left: { 200: {q:"له أوراق وليس شجرة؟", a:"الكتاب"}, 400: {q:"كلما زاد نقص؟", a:"العمر"}, 600: {q:"بالدقيقة مرتين وبالقرن مرة؟", a:"القاف"}, 800: {q:"أصلع في المطر ولا يبتل؟", a:"لأنه أصلع"}, 1000: {q:"يرى كل شيء ولا يملك عيون؟", a:"المرآة"} },
+                left: { 200: {q:"له أوراق وليس شجرة? ", a:"الكتاب"}, 400: {q:"كلما زاد نقص؟", a:"العمر"}, 600: {q:"بالدقيقة مرتين وبالقرن مرة؟", a:"القاف"}, 800: {q:"أصلع في المطر ولا يبتل؟", a:"لأنه أصلع"}, 1000: {q:"يرى كل شيء ولا يملك عيون؟", a:"المرآة"} },
                 right: { 200: {q:"إذا ذكرته اختفى؟", a:"الصمت"}, 400: {q:"ابن أمك وليس أخوك؟", a:"أنت"}, 600: {q:"يمشي بلا أرجل؟", a:"الساعة/الماء"}, 800: {q:"يخترق الزجاج ولا يكسره؟", a:"الضوء"}, 1000: {q:"صندوق مليء باللؤلؤ؟", a:"الفم"} }
             }
         };
@@ -168,9 +172,17 @@
         function handleAdmin() {
             let p = prompt("كلمة السر:");
             if(p !== "123456") return;
-            let action = prompt("1: صيانة | 2: طرد | 3: تنبيه");
-            if(action == "1") window.dbSet('isLocked', confirm("تفعيل الصيانة؟"));
-            else if(action == "2") { if(confirm("طرد الكل؟")) window.dbSet('kickAll', true); }
+            let action = prompt("1: صيانة (فتح/إغلاق) | 2: طرد | 3: تنبيه");
+            
+            if(action == "1") {
+                // تبديل الحالة تلقائياً
+                let newState = !window.isCurrentlyLocked;
+                let msg = newState ? "تفعيل وضع الصيانة؟" : "إيقاف وضع الصيانة وفتح الموقع؟";
+                if(confirm(msg)) window.dbSet('isLocked', newState);
+            }
+            else if(action == "2") { 
+                if(confirm("طرد الكل؟")) window.dbSet('kickAll', true); 
+            }
             else if(action == "3") {
                 let msg = prompt("نص التنبيه (فارغ للإغلاق):");
                 window.dbSet('alertActive', !!msg);
@@ -259,3 +271,4 @@
     </script>
 </body>
 </html>
+ ٠
