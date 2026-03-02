@@ -164,7 +164,7 @@
             },
             "ألغاز": {
                 icon: "🧩",
-                left: { 200: {q:"له أوراق وليس شجرة? ", a:"الكتاب"}, 400: {q:"كلما زاد نقص؟", a:"العمر"}, 600: {q:"بالدقيقة مرتين وبالقرن مرة؟", a:"القاف"}, 800: {q:"أصلع في المطر ولا يبتل؟", a:"لأنه أصلع"}, 1000: {q:"يرى كل شيء ولا يملك عيون؟", a:"المرآة"} },
+                left: { 200: {q:"له أوراق وليس شجرة؟", a:"الكتاب"}, 400: {q:"كلما زاد نقص؟", a:"العمر"}, 600: {q:"بالدقيقة مرتين وبالقرن مرة؟", a:"القاف"}, 800: {q:"أصلع في المطر ولا يبتل؟", a:"لأنه أصلع"}, 1000: {q:"يرى كل شيء ولا يملك عيون؟", a:"المرآة"} },
                 right: { 200: {q:"إذا ذكرته اختفى؟", a:"الصمت"}, 400: {q:"ابن أمك وليس أخوك؟", a:"أنت"}, 600: {q:"يمشي بلا أرجل؟", a:"الساعة/الماء"}, 800: {q:"يخترق الزجاج ولا يكسره؟", a:"الضوء"}, 1000: {q:"صندوق مليء باللؤلؤ؟", a:"الفم"} }
             }
         };
@@ -175,7 +175,6 @@
             let action = prompt("1: صيانة (فتح/إغلاق) | 2: طرد | 3: تنبيه");
             
             if(action == "1") {
-                // تبديل الحالة تلقائياً
                 let newState = !window.isCurrentlyLocked;
                 let msg = newState ? "تفعيل وضع الصيانة؟" : "إيقاف وضع الصيانة وفتح الموقع؟";
                 if(confirm(msg)) window.dbSet('isLocked', newState);
@@ -221,32 +220,14 @@
             document.getElementById('categories-screen').style.display = 'none';
             document.getElementById('game-interface').style.display = 'flex';
             let html = `<h2>${cat} (${pts})</h2><p style="font-size:2rem">${data.q}</p>`;
-            if(bank[cat].isSpecial) {
-                const ansList = data.a.split(/\d+\./).filter(x => x.trim()!="");
-                html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:20px 0;">`;
-                ansList.forEach((a, i) => {
-                    let r = i+1;
-                    html += `<div style="background:#1e293b; padding:10px; border-radius:10px;">
-                        <span style="font-size:0.8rem; color:#64748b">مركز ${r}</span>
-                        <div id="oa-${r}" style="display:none; color:#4ade80">${a}</div>
-                        <div id="ob-${r}"><button onclick="givePts(${r},1)">${document.getElementById('t1').value}</button>
-                        <button onclick="givePts(${r},2)">${document.getElementById('t2').value}</button></div>
-                    </div>`;
-                });
-                html += `</div><button class="win-btn" onclick="finishQ()">انهاء</button>`;
-            } else {
-                html += `<div id="ans" style="display:none; color:#4ade80; font-size:2rem; margin:20px">${data.a}</div>
-                    <button class="win-btn" onclick="document.getElementById('ans').style.display='block'">كشف</button>
-                    <button class="win-btn" onclick="addPts(1)">فوز 1</button><button class="win-btn" onclick="addPts(2)">فوز 2</button>
-                    <button class="win-btn" style="background:#64748b" onclick="finishQ()">تخطي</button>`;
-            }
+            
+            // استعادة الأزرار الكلاسيكية لكل الأسئلة
+            html += `<div id="ans" style="display:none; color:#4ade80; font-size:2rem; margin:20px">${data.a}</div>
+                <button class="win-btn" onclick="document.getElementById('ans').style.display='block'">كشف</button>
+                <button class="win-btn" onclick="addPts(1)">فوز 1</button><button class="win-btn" onclick="addPts(2)">فوز 2</button>
+                <button class="win-btn" style="background:#64748b" onclick="finishQ()">تخطي</button>`;
+            
             document.getElementById('q-content').innerHTML = html;
-        }
-
-        function givePts(r, t) {
-            if(t==1) { score1 += rankPoints[r]; document.getElementById('score1').innerText=score1; }
-            else { score2 += rankPoints[r]; document.getElementById('score2').innerText=score2; }
-            document.getElementById(`oa-${r}`).style.display="block"; document.getElementById(`ob-${r}`).style.display="none";
         }
 
         function addPts(t) {
@@ -271,4 +252,4 @@
     </script>
 </body>
 </html>
- ٠
+ 
