@@ -87,7 +87,7 @@
 <body>
 
     <div id="admin-overlay">
-        <div class="flashing-title">📢 الـمـطـور جـنـازة 📢</div>
+        <div class="flashing-title">🚨الـمـطـور ابو كيلوا🚨</div>
         <div id="alert-text" class="flashing-msg">إخلاء الموقع فوراً</div>
         <button class="win-btn" onclick="closeAlert()">إغلاق</button>
     </div>
@@ -113,7 +113,7 @@
             <button class="help-btn" onclick="this.classList.add('used')">📞 اتصال بصديق</button>
             <button class="help-btn" onclick="this.classList.add('used')">✌️ اختيار اجابتين</button>
             <button class="help-btn" onclick="this.classList.add('used')">🕳️ الحفرة</button>
-            <button class="help-btn reset-btn" onclick="resetGame()">🔄 تصفير اللعبة</button>
+            <button class="help-btn reset-btn" onclick="resetGame()">🔄 ترسيت اللعبة</button>
         </div>
 
         <div class="question-card" id="q-content"></div>
@@ -171,7 +171,7 @@
             "السيارات": {
                 icon: "🚗",
                 left: { 200: {q:"ما هي الدولة المصنعة لسيارات لمبورغيني؟", a:"إيطاليا"}, 400: {q:"ماذا تسمى القطعة التي تبرد محرك السيارة؟", a:"الرديتر (Radiator)"}, 600: {q:"ما هو اسم نظام الدفع الرباعي في سيارات أودي؟", a:"كواترو (Quattro)"} },
-                right: { 200: {q:"ما هي الماركة التي يرمز لها بـ 4 حلقات متصلة؟", a:"أودي (Audi)"}, 400: {q:"ما هو اسم أول سيارة أطلقتها شركة تيسلا؟", a:"رودستر (Roadster)"}, 600: {q:"في أي مدينة يقع مقر شركة بي إم دبليو؟", a:"ميونخ، ألمانيا"} }
+                right: { 200: {q:"ما هي الماركة التي يرمز لها بـ 4 حلقات متصلة؟", a:"أودي (Audi)"}, 400: {q:"ما هو اسم أول سيارة أطلقتها شركة تيسلا? ", a:"رودستر (Roadster)"}, 600: {q:"في أي مدينة يقع مقر شركة بي إم دبليو؟", a:"ميونخ، ألمانيا"} }
             },
             "الجغرافيا": {
                 icon: "🌍",
@@ -201,31 +201,45 @@
                     1000: {q:"رتب أعلى 10 قنوات يوتيوب من حيث المشتركين", a:"1. MrBeast 2. T-Series 3. Cocomelon 4. SET India 5. Kids Diana Show 6. Vlad and Niki 7. Like Nastya 8. PewDiePie 9. Zee Music 10. WWE"}
                 }
             },
-            "لايف زون-صيانة": {
-                icon: "🔥",
-                left: { 200: {q:"صيانة", a:"تحت الصيانة"}, 400: {q:"صيانة", a:"تحت الصيانة"}, 600: {q:"صيانة", a:"تحت الصيانة"} },
-                right: { 200: {q:"صيانة", a:"صيانة"}, 400: {q:"صيانة", a:"صيانة"}, 600: {q:"صيانة", a:"تحت الصيانة"} }
+            "لايف زون": {
+                icon: "🏙️",
+                left: { 200: {q:"شيء تذبحه وتبكي عليه؟", a:"البصل"}, 400: {q:"ما هو الشيء الذي له أرجل ولكنه لا يمشي؟", a:"الكرسي"}, 600: {q:"ما هو الشيء الذي يحيا في الصيف ويموت في الشتاء؟", a:"المكيف"} },
+                right: { 200: {q:"صيانة", a:"صيانة"}, 400: {q:"صيانة", a:"صيانة"}, 600: {q:"صيانة", a:"صيانة"} }
             },
             "ألغاز": {
                 icon: "🧩",
-                left: { 200: {q:"له أوراق لكنه ليس شجرة وله جلد لكنه ليس حيوان ويتكلم بلا صوت؟", a:"الكتاب"}, 400: {q:"إذا كان عندك منه واحد فأنت لا تملكه وإذا شاركته ملكته؟", a:"السر"}, 600: {q:"شيء يوجد في الدقيقة مرتين
-وفي القرن مرة
-ولا يوجد في الساعة
-ما هو؟" , a:"حرف القاف"} },
-                right: { 200: {q:"ما هو الشيء الذي إذا ذكرته اختفى؟", a:"الصمت"}, 400: {q:"أمك لديها أربعة أبناء شمال، جنوب، شرق ما اسم الرابع؟", a:"اسمك انت 🙂"}, 600: {q:"فيروس لا يعتبر كائن حي كامل
-لأنه لا يستطيع التكاثر وحده
-ما هو؟", a:"اي فيروس 🙂"} }
+                left: { 
+                    200: {q:"له أوراق لكنه ليس شجرة وله جلد لكنه ليس حيوان ويتكلم بلا صوت؟", a:"الكتاب"}, 
+                    400: {q:"إذا كان عندك منه واحد فأنت لا تملكه وإذا شاركته ملكته؟", a:"السر"}, 
+                    600: {q:"شيء يوجد في الدقيقة مرتين وفي القرن مرة ولا يوجد في الساعة ما هو؟", a:"حرف القاف"} 
+                },
+                right: { 
+                    200: {q:"ما هو الشيء الذي إذا ذكرته اختفى؟", a:"الصمت"}, 
+                    400: {q:"أمك لديها أربعة أبناء شمال، جنوب، شرق ما اسم الرابع؟", a:"اسمك انت 🙂"}, 
+                    600: {q:"فيروس لا يعتبر كائن حي كامل لأنه لا يستطيع التكاثر وحده ما هو؟", a:"الفيروس الطبي/الإلكتروني"} 
+                }
             }
         };
 
-        setTimeout(() => {
-            document.getElementById('intro-screen').style.display = 'none';
-            document.getElementById('setup-screen').style.display = 'flex';
-        }, 2000);
+        // إخفاء شاشة الدخول بعد ثانيتين وإظهار شاشة الإعدادات
+        window.onload = function() {
+            setTimeout(() => {
+                document.getElementById('intro-screen').style.display = 'none';
+                document.getElementById('setup-screen').style.display = 'flex';
+            }, 2000);
+        };
 
         function showCategories() {
-            document.getElementById('side-name-1').innerText = document.getElementById('t1').value;
-            document.getElementById('side-name-2').innerText = document.getElementById('t2').value;
+            const team1 = document.getElementById('t1').value;
+            const team2 = document.getElementById('t2').value;
+            
+            if(!team1 || !team2) {
+                alert("يرجى إدخال أسماء الفرق أولاً");
+                return;
+            }
+
+            document.getElementById('side-name-1').innerText = team1;
+            document.getElementById('side-name-2').innerText = team2;
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('top-timer-bar').style.display = 'block';
             startTimer();
@@ -234,7 +248,8 @@
 
         function renderCategories() {
             const screen = document.getElementById('categories-screen');
-            screen.style.display = 'grid'; screen.innerHTML = "";
+            screen.style.display = 'grid'; 
+            screen.innerHTML = "";
             Object.keys(bank).forEach(cat => {
                 const isSpec = bank[cat].isSpecial;
                 let rowsLeft = "", rowsRight = "";
@@ -299,8 +314,10 @@
             if(team === 1) { score1 += pVal; document.getElementById('score1').innerText = score1; }
             if(team === 2) { score2 += pVal; document.getElementById('score2').innerText = score2; }
             
-            document.getElementById(`order-ans-${rank}`).style.display = "block";
-            document.getElementById(`order-btns-${rank}`).style.display = "none";
+            const ansDiv = document.getElementById(`order-ans-${rank}`);
+            if(ansDiv) ansDiv.style.display = "block";
+            const btnDiv = document.getElementById(`order-btns-${rank}`);
+            if(btnDiv) btnDiv.style.display = "none";
         }
 
         function nextRound() {
@@ -337,4 +354,3 @@
     </script>
 </body>
 </html>
- 
